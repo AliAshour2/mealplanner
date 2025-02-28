@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, Clock, Heart } from "lucide-react";
+import Subscribe from "./subscribe/page";
 
 export default function Home() {
   return (
@@ -59,6 +60,8 @@ export default function Home() {
             </div>
           </div>
         </section>
+
+        <Subscribe />
     </div>
   );
 }
