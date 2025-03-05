@@ -1,53 +1,55 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(request: NextRequest) {
   try {
     const clerkUser = await currentUser();
-    const email = clerkUser?.emailAddresses[0].emailAddress;
-
     if (!clerkUser) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
-    }
-
-    if (!email) {
-      return NextResponse.json({ error: "Email not found" }, { status: 400 });
-    }
-
-    const existingProfile = await prisma.profile.findUnique({
-      where: { userId: clerkUser.id },
-    });
-
-    if (!existingProfile) {
       return NextResponse.json(
-        { message: "User does not have an email address" },
+        { error: "User not found in Clerk." },
+        { status: 404 }
+      );
+    }
+
+    const email = clerkUser.emailAddresses?.[0]?.emailAddress || "";
+    if (!email) {
+      return NextResponse.json(
+        { error: "User does not have an email address." },
         { status: 400 }
       );
     }
 
+    // Check if profile already exists
+    const existingProfile = await prisma.profile.findUnique({
+      where: { userId: clerkUser.id },
+    });
+
     if (existingProfile) {
-      return NextResponse.json({ message: "Profile already exists" });
+      // Profile already exists
+      return NextResponse.json({ message: "Profile already exists." });
     }
 
+    // Otherwise, create the profile
     await prisma.profile.create({
       data: {
         userId: clerkUser.id,
         email,
+        subscruiptionActive: false,
         subscriptionTier: null,
         stripeSubscriptionId: null,
-        subscripitonActive: false,
       },
     });
 
+    console.log(`Prisma profile created for user: ${clerkUser.id}`);
     return NextResponse.json(
-      { message: "Profile created successfully" },
+      { message: "Profile created successfully." },
       { status: 201 }
     );
-  } catch (error) {
-    console.error("Error in POST /api/create-profile:", error);
+  } catch (error: any) {
+    console.error("Error in create-profile API:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Internal Server Error." },
       { status: 500 }
     );
   }

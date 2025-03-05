@@ -51,3 +51,13 @@ export interface PricingPlan {
       ctaText: "Best for Families",
     },
   ]; 
+
+const priceIDMap : Record<string , string> = {
+  starter : process.env.STRIPE_PRICE_STARTER! ,
+  premium : process.env.STRIPE_PRICE_PREMIUM! ,
+  family  : process.env.STRIPE_PRICE_FAMILY! 
+}
+
+
+
+export const getPriceIDFromType = (planType : string) => priceIDMap[planType];
