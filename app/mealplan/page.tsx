@@ -18,6 +18,8 @@ import {
   Apple,
   Calendar,
   ChevronRight,
+  CheckCircle,
+  X
 } from "lucide-react";
 import {
   Select,
@@ -27,9 +29,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useMutation } from "@tanstack/react-query";
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import MealPlanDisplay, { MealPlanData } from "@/components/mealPlanDisplay";
 import { CUISINES, DIET_TYPES } from "@/lib/constants/mealDashBoard";
+
+// Toast notification component
+const SuccessToast = ({ onClose }: { onClose: () => void }) => (
+  <div className="fixed top-4 right-4 z-50 animate-fade-in animate-slide-in-right">
+    <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-lg flex items-center justify-between w-[300px]">
+      <div className="flex items-center">
+        <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+        <span>Subscription activated successfully!</span>
+      </div>
+      <button onClick={onClose} className="text-green-700 hover:text-green-800">
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  </div>
+);
 
 interface MealPlanInput {
   dietType: string;
@@ -65,6 +83,21 @@ async function generateMealPlan(payload: MealPlanInput) {
 const MealPlanDashboard = () => {
   const [calories, setCalories] = React.useState(2000);
   const [days, setDays] = React.useState(7);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (searchParams.get('subscription_success') === 'true') {
+      setShowSuccessToast(true);
+      
+      // Auto-hide after 5 seconds
+      const timer = setTimeout(() => {
+        setShowSuccessToast(false);
+      }, 5000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
 
   const { data, mutate, isPending, isSuccess } = useMutation<
     MealPlanResponse,
@@ -96,6 +129,8 @@ const MealPlanDashboard = () => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-secondary/30 p-6 md:p-10">
+      {showSuccessToast && <SuccessToast onClose={() => setShowSuccessToast(false)} />}
+      
       <div className="mx-auto max-w-5xl w-full">
         <div className="mb-8 text-center">
           <h1 className="text-4xl font-bold tracking-tight text-primary mb-2">

@@ -109,8 +109,14 @@ const Navbar = () => {
                 Subscribe
               </Link>
               <Link
+                href="/sign-in"
+                className="text-gray-700 hover:text-gray-900 transition"
+              >
+                Sign In
+              </Link>
+              <Link
                 href="/sign-up"
-                className="block text-white py-2 bg-green-600 hover:bg-green-700 px-3 rounded"
+                className="block text-white py-2 bg-green-600 hover:bg-green-700 px-3 rounded btn-bounce"
               >
                 Sign Up
               </Link>
@@ -171,6 +177,12 @@ const Navbar = () => {
                 className="block text-gray-700 py-2 hover:bg-gray-100 px-3 rounded"
               >
                 Subscribe
+              </Link>
+              <Link
+                href="/sign-in"
+                className="block text-gray-700 py-2 hover:bg-gray-100 px-3 rounded"
+              >
+                Sign In
               </Link>
               <Link
                 href="/sign-up"

@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,13 +7,32 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Profile {
+model profiles {
   id                   String   @id @default(uuid())
-  userId               String   @unique
-  email                String
-  subscriptionActive   Boolean  @default(false)
-  subscriptionTier     String?
-  stripeSubscriptionId String?  @unique
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  userId               String   @unique @map("user_id")
+  email                String?
+  subscriptionActive   Boolean  @default(false) @map("subscription_active")
+  subscriptionTier     String?  @map("subscription_tier")
+  stripeSubscriptionId String?  @unique @map("stripe_subscription_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+  role                 String   @default("buyer")
+  verification_status  String   @default("pending")
+  kyc_status           String   @default("pending")
+  is_manufacturer      Boolean  @default(false)
+  average_rating       String   @default("0")
+  total_reviews        Int      @default(0)
+  business_registered  Boolean  @default(false)
+  is_mfa_enabled       Boolean  @default(false)
+  preferred_mfa_method String   @default("none")
+  
+  // Dietary preferences
+  dietaryPreferences   String[] @default([]) @map("dietary_preferences")
+  allergies            String[] @default([]) @map("allergies")
+  calorieTarget        Int      @default(2200) @map("calorie_target")
+  streakDays           Int      @default(0) @map("streak_days")
+  completedMeals       Int      @default(0) @map("completed_meals")
+  savedRecipes         Int      @default(0) @map("saved_recipes")
+
+  @@map("profiles")
 }

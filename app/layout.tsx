@@ -5,7 +5,6 @@ import Navbar from "@/components/navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ReactQueryClientProvider } from "@/components/react-query-client-provider";
 
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -27,19 +26,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <ReactQueryClientProvider>
-          <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          >
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        suppressHydrationWarning
+      >
+        <ClerkProvider>
+          <ReactQueryClientProvider>
             <Navbar />
-            <div className="max-w-7xl mx-auto px-16 sm:px-2 lg:px-8">
-              {children}
-            </div>
-          </body>
-        </ReactQueryClientProvider>
-      </html>
-    </ClerkProvider>
+            <div className="max-w-7xl mx-auto px-16 sm:px-2 lg:px-8">{children}</div>
+          </ReactQueryClientProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

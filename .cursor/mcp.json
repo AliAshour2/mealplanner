@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "mealplanner_db": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@neondatabase/mcp-server-neon",
+        "start",
+        "napi_9svdoeav2b8vi002aqjc5x2ywwlzl710dyyj8s3wm0a6r0r7d83forvzwawns7il"
+      ]
+    },
+    "supabase_backup": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://postgres.aodfxoiktoxieamcsckd:Tito123Hamo@aws-0-eu-central-1.pooler.supabase.com:5432/postgres"
+      ]
+    }
+  }
+} 

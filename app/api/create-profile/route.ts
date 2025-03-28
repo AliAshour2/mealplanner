@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if profile already exists
-    const existingProfile = await prisma.profile.findUnique({
+    const existingProfile = await prisma.profiles.findUnique({
       where: { userId: clerkUser.id },
     });
 
@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Otherwise, create the profile
-    await prisma.profile.create({
+    await prisma.profiles.create({
       data: {
         userId: clerkUser.id,
         email,
-        subscruiptionActive: false,
+        subscriptionActive: false,
         subscriptionTier: null,
         stripeSubscriptionId: null,
       },
