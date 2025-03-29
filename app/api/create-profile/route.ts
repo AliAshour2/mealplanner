@@ -1,8 +1,8 @@
 import { currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     const clerkUser = await currentUser();
     if (!clerkUser) {
@@ -20,33 +20,45 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if profile already exists
-    const existingProfile = await prisma.profiles.findUnique({
-      where: { userId: clerkUser.id },
-    });
-
-    if (existingProfile) {
+    // Check if profile already exists - use raw query to bypass type issues
+    const existingProfiles = await prisma.$queryRaw`
+      SELECT * FROM "Profile" WHERE "userId" = ${clerkUser.id}
+    `;
+    
+    if (Array.isArray(existingProfiles) && existingProfiles.length > 0) {
       // Profile already exists
       return NextResponse.json({ message: "Profile already exists." });
     }
 
-    // Otherwise, create the profile
-    await prisma.profiles.create({
-      data: {
-        userId: clerkUser.id,
-        email,
-        subscriptionActive: false,
-        subscriptionTier: null,
-        stripeSubscriptionId: null,
-      },
-    });
+    // Otherwise, create the profile with the simplified schema
+    await prisma.$executeRaw`
+      INSERT INTO "Profile" (
+        id, 
+        "userId", 
+        email, 
+        "subscriptionActive", 
+        "subscriptionTier", 
+        "stripeSubscriptionId",
+        "createdAt",
+        "updatedAt"
+      ) VALUES (
+        gen_random_uuid()::text, 
+        ${clerkUser.id}, 
+        ${email}, 
+        false, 
+        null, 
+        null,
+        now(),
+        now()
+      )
+    `;
 
-    console.log(`Prisma profile created for user: ${clerkUser.id}`);
+    console.log(`Profile created for user: ${clerkUser.id}`);
     return NextResponse.json(
       { message: "Profile created successfully." },
       { status: 201 }
     );
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in create-profile API:", error);
     return NextResponse.json(
       { error: "Internal Server Error." },

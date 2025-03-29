@@ -3,6 +3,18 @@ import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 
+// Define types for the raw query results
+interface ProfileData {
+  id: string;
+  userId: string;
+  email: string;
+  subscriptionTier: string | null;
+  subscriptionActive: boolean;
+  stripeSubscriptionId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 export async function POST(request: NextRequest) {
   console.log("🔔 Webhook received!");
   const body = await request.text();
@@ -20,8 +32,9 @@ export async function POST(request: NextRequest) {
       webhookSecret
     );
     console.log("✅ Webhook signature verified for event type:", event.type);
-  } catch (error: any) {
-    console.error("⚠️ Webhook signature verification failed.", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("⚠️ Webhook signature verification failed.", errorMessage);
     return NextResponse.json(
       { error: "Webhook signature verification failed" },
       { status: 400 }
@@ -87,28 +100,37 @@ const handleCheckoutSessionCompleted = async (
 
   console.log(`Processing subscription ${subscriptionId} for user ${userId} with plan ${session.metadata?.planType}`);
   
-  // Update Prisma with subscription details
+  // Update with subscription details (using raw query to avoid type issues)
   try {
-    const before = await prisma.profiles.findUnique({
-      where: { userId },
-    });
+    // Get profile before update
+    const profiles = await prisma.$queryRaw<ProfileData[]>`
+      SELECT * FROM "Profile" WHERE "userId" = ${userId}
+    `;
     
-    console.log("Profile before update:", before);
+    console.log("Profile before update:", profiles[0]);
     
-    const updated = await prisma.profiles.update({
-      where: { userId },
-      data: {
-        stripeSubscriptionId: subscriptionId,
-        subscriptionActive: true,
-        subscriptionTier: session.metadata?.planType || null,
-      },
-    });
+    // Update the profile
+    await prisma.$executeRaw`
+      UPDATE "Profile" 
+      SET 
+        "stripeSubscriptionId" = ${subscriptionId},
+        "subscriptionActive" = true,
+        "subscriptionTier" = ${session.metadata?.planType || null}
+      WHERE "userId" = ${userId}
+    `;
     
-    console.log("Profile after update:", updated);
+    // Get updated profile
+    const updatedProfiles = await prisma.$queryRaw<ProfileData[]>`
+      SELECT * FROM "Profile" WHERE "userId" = ${userId}
+    `;
+    
+    console.log("Profile after update:", updatedProfiles[0]);
     console.log(`✅ Subscription activated for user: ${userId}`);
-  } catch (error: any) {
-    console.error("Prisma Update Error:", error.message);
-    console.error("Error stack:", error.stack);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    const errorStack = error instanceof Error ? error.stack : '';
+    console.error("Update Error:", errorMessage);
+    if (errorStack) console.error("Error stack:", errorStack);
   }
 };
 
@@ -126,35 +148,30 @@ const handleInvoicePaymentFailed = async (invoice: Stripe.Invoice) => {
   }
 
   // Retrieve userId from subscription ID
-  let userId: string | undefined;
   try {
-    const profile = await prisma.profiles.findUnique({
-      where: { stripeSubscriptionId: subscriptionId },
-      select: { userId: true },
-    });
+    // Find the profile with this subscription ID
+    const profiles = await prisma.$queryRaw<ProfileData[]>`
+      SELECT "userId" FROM "Profile" WHERE "stripeSubscriptionId" = ${subscriptionId}
+    `;
 
-    if (!profile?.userId) {
+    if (!profiles.length || !profiles[0].userId) {
       console.error("No profile found for this subscription ID.");
       return;
     }
 
-    userId = profile.userId;
-  } catch (error: any) {
-    console.error("Prisma Query Error:", error.message);
-    return;
-  }
+    const userId = profiles[0].userId;
 
-  // Update Prisma with payment failure
-  try {
-    await prisma.profiles.update({
-      where: { userId },
-      data: {
-        subscriptionActive: false,
-      },
-    });
+    // Update the subscription status
+    await prisma.$executeRaw`
+      UPDATE "Profile" 
+      SET "subscriptionActive" = false
+      WHERE "userId" = ${userId}
+    `;
+    
     console.log(`Subscription payment failed for user: ${userId}`);
-  } catch (error: any) {
-    console.error("Prisma Update Error:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("Query or Update Error:", errorMessage);
   }
 };
 
@@ -167,35 +184,31 @@ const handleCustomerSubscriptionDeleted = async (subscription: Stripe.Subscripti
   );
 
   // Retrieve userId from subscription ID
-  let userId: string | undefined;
   try {
-    const profile = await prisma.profiles.findUnique({
-      where: { stripeSubscriptionId: subscriptionId },
-      select: { userId: true },
-    });
+    // Find the profile with this subscription ID
+    const profiles = await prisma.$queryRaw<ProfileData[]>`
+      SELECT "userId" FROM "Profile" WHERE "stripeSubscriptionId" = ${subscriptionId}
+    `;
 
-    if (!profile?.userId) {
+    if (!profiles.length || !profiles[0].userId) {
       console.error("No profile found for this subscription ID.");
       return;
     }
 
-    userId = profile.userId;
-  } catch (error: any) {
-    console.error("Prisma Query Error:", error.message);
-    return;
-  }
+    const userId = profiles[0].userId;
 
-  // Update Prisma with subscription cancellation
-  try {
-    await prisma.profiles.update({
-      where: { userId },
-      data: {
-        subscriptionActive: false,
-        stripeSubscriptionId: null,
-      },
-    });
+    // Update the subscription status
+    await prisma.$executeRaw`
+      UPDATE "Profile" 
+      SET 
+        "subscriptionActive" = false,
+        "stripeSubscriptionId" = null
+      WHERE "userId" = ${userId}
+    `;
+    
     console.log(`Subscription canceled for user: ${userId}`);
-  } catch (error: any) {
-    console.error("Prisma Update Error:", error.message);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error("Query or Update Error:", errorMessage);
   }
 };

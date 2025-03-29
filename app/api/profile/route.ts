@@ -7,6 +7,17 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2023-10-16",
 });
 
+interface ProfileData {
+  id: string;
+  userId: string;
+  email: string;
+  subscriptionTier: string | null;
+  subscriptionActive: boolean;
+  stripeSubscriptionId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // GET profile data
 export async function GET(request: NextRequest) {
   try {
@@ -30,10 +41,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Find the profile
-    const profile = await prisma.profiles.findUnique({
-      where: { userId },
-    });
+    // Find the profile using raw query
+    const profiles = await prisma.$queryRaw<ProfileData[]>`
+      SELECT * FROM "Profile" WHERE "userId" = ${userId}
+    `;
+    
+    const profile = profiles.length > 0 ? profiles[0] : null;
 
     if (!profile) {
       return NextResponse.json(
@@ -65,15 +78,16 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Format the response to include the preferences data in a more organized way
+    // Using simplified schema, we no longer have these fields
+    // Provide default values for compatibility
     const userPreferences = {
-      dietaryPreferences: profile.dietaryPreferences || [],
-      allergies: profile.allergies || [],
-      calorieTarget: profile.calorieTarget || 2200,
-      streakDays: profile.streakDays || 0,
-      completedMeals: profile.completedMeals || 0,
-      savedRecipes: profile.savedRecipes || 0,
-      // This would typically come from another table in a real app
+      dietaryPreferences: [],
+      allergies: [],
+      calorieTarget: 2200,
+      streakDays: 0,
+      completedMeals: 0,
+      savedRecipes: 0,
+      // Example data for UI display
       mealHistory: [
         { date: "April 10, 2025", meals: 3, completed: true },
         { date: "April 9, 2025", meals: 3, completed: true },
@@ -90,7 +104,7 @@ export async function GET(request: NextRequest) {
       subscriptionDetails,
       userPreferences
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in GET profile API:", error);
     return NextResponse.json(
       { error: "Internal Server Error." },
@@ -122,39 +136,38 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Protect sensitive fields from being updated by users
-    const safeUpdateData = {
-      email: updateData.email,
-      role: updateData.role,
-      // Only allow certain fields to be updated
-      // Add more fields as needed
-    };
-
-    // If user preferences were sent, update those too
-    if (userPreferences) {
-      Object.assign(safeUpdateData, {
-        dietaryPreferences: userPreferences.dietaryPreferences,
-        allergies: userPreferences.allergies,
-        calorieTarget: userPreferences.calorieTarget,
-      });
+    // We only have limited fields in our simplified schema
+    // Only allow updating email in this version
+    const email = updateData.email;
+    
+    if (!email) {
+      return NextResponse.json(
+        { error: "No valid update data provided." },
+        { status: 400 }
+      );
     }
 
-    // Filter out undefined values
-    const filteredUpdateData = Object.entries(safeUpdateData)
-      .filter(([_, value]) => value !== undefined)
-      .reduce((acc, [key, value]) => ({ ...acc, [key]: value }), {});
-
-    // Update the profile
-    const updatedProfile = await prisma.profiles.update({
-      where: { userId },
-      data: filteredUpdateData,
-    });
+    // Update the profile with raw query
+    await prisma.$executeRaw`
+      UPDATE "Profile"
+      SET 
+        email = ${email},
+        "updatedAt" = now()
+      WHERE "userId" = ${userId}
+    `;
+    
+    // Get the updated profile
+    const updatedProfiles = await prisma.$queryRaw<ProfileData[]>`
+      SELECT * FROM "Profile" WHERE "userId" = ${userId}
+    `;
+    
+    const updatedProfile = updatedProfiles.length > 0 ? updatedProfiles[0] : null;
 
     return NextResponse.json({ 
       message: "Profile updated successfully.", 
       profile: updatedProfile 
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in PUT profile API:", error);
     return NextResponse.json(
       { error: "Internal Server Error." },

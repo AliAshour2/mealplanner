@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
+interface ProfileData {
+  id: string;
+  userId: string;
+  subscriptionActive: boolean;
+  subscriptionTier: string | null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,30 +19,32 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Check if user has an active subscription
-    const profile = await prisma.profiles.findUnique({
-      where: { userId },
-      select: { subscriptionActive: true, subscriptionTier: true },
-    });
+    console.log(`Checking subscription for user ${userId}`);
 
+    // Check if user has an active subscription using a raw query
+    const profiles = await prisma.$queryRaw<ProfileData[]>`
+      SELECT id, "userId", "subscriptionActive", "subscriptionTier" 
+      FROM "Profile" 
+      WHERE "userId" = ${userId}
+    `;
+
+    const profile = profiles.length > 0 ? profiles[0] : null;
     console.log(`User profile for ${userId}:`, profile);
 
-    // TEMPORARY FIX: Bypass subscription check for testing
-    // Remove this when Stripe webhook is working correctly
-    if (profile) {
-      // For any user that has a profile, temporarily return active subscription
-      console.log("TEMPORARY: Bypassing subscription check for testing");
+    // If no profile found, return false for subscription check
+    if (!profile) {
+      console.log(`No profile found for user ${userId}`);
       return NextResponse.json({
-        subscriptionActive: true,
-        subscriptionTier: "starter"
+        subscriptionActive: false,
+        subscriptionTier: null
       });
     }
 
     return NextResponse.json({
-      subscriptionActive: profile?.subscriptionActive || false,
-      subscriptionTier: profile?.subscriptionTier || null
+      subscriptionActive: profile.subscriptionActive || false,
+      subscriptionTier: profile.subscriptionTier || null
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Error in check-subscription API:", error);
     return NextResponse.json(
       { error: "Internal Server Error." },

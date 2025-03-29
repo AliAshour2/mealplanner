@@ -25,39 +25,50 @@ export default function CreateProfilePage() {
       setStatus("creating");
       setMessage("Setting up your profile...");
       
-      const res = await fetch("/api/create-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      
-      if (!res.ok) {
-        throw new Error("Failed to create profile");
+      try {
+        const res = await fetch("/api/create-profile", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        
+        // Get the response data whether successful or not
+        const data = await res.json();
+        
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to create profile");
+        }
+        
+        return data as ApiResponse;
+      } catch (error) {
+        console.error("Detailed error during profile creation:", error);
+        if (error instanceof Error) {
+          throw error;
+        } else {
+          throw new Error("An unknown error occurred");
+        }
       }
-      
-      const data = await res.json();
-      return data as ApiResponse;
     },
     onSuccess: (data) => {
       setStatus("success");
       setMessage(data.message || "Profile created successfully!");
       console.log("Profile created:", data.message);
       
-      // Redirect to subscription page after 2 seconds
+      // Redirect to subscription page after 500ms instead of 2 seconds
       setTimeout(() => {
         router.push("/subscribe");
-      }, 2000);
+      }, 500);
     },
     onError: (error) => {
       setStatus("error");
       setMessage(error.message || "Something went wrong. Please try again.");
       console.error("Error creating profile:", error);
       
-      // Redirect to home page after 3 seconds if error
+      // Redirect to home page after 1 second instead of 3 seconds
       setTimeout(() => {
         router.push("/");
-      }, 3000);
+      }, 1000);
     },
   });
 
