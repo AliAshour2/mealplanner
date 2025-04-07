@@ -27,19 +27,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
-      <html lang="en">
+    <html lang="en">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ReactQueryClientProvider>
-          <body
-            className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-          >
+          <ClerkProvider>
             <Navbar />
             <div className="max-w-7xl mx-auto px-16 sm:px-2 lg:px-8">
               {children}
             </div>
-          </body>
+          </ClerkProvider>
         </ReactQueryClientProvider>
-      </html>
-    </ClerkProvider>
+      </body>
+    </html>
   );
 }

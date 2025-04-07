@@ -1,0 +1,12 @@
+/*
+  Warnings:
+
+  - You are about to drop the column `subscruiptionActive` on the `Profile` table. All the data in the column will be lost.
+
+*/
+-- AlterTable
+ALTER TABLE "Profile" DROP COLUMN "subscruiptionActive",
+ADD COLUMN     "subscriptionActive" BOOLEAN NOT NULL DEFAULT false;
+
+-- Rename the column from subscruiptionActive to subscriptionActive
+ALTER TABLE "Profile" RENAME COLUMN "subscruiptionActive" TO "subscriptionActive";

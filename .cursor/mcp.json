@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "neon": {
+      "command": "cmd",
+      "args": [
+        "/c",
+        "npx",
+        "-y",
+        "@neondatabase/mcp-server-neon",
+        "start",
+        "postgresql://neondb_owner:npg_Mpw9SLoE5tGC@ep-rapid-snowflake-a2p1o17h-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
+      ]
+    }
+  },
+  "defaultMcpServer": "neon"
+} 
