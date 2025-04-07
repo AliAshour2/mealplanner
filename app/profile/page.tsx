@@ -16,8 +16,9 @@ import {
   User,
   Utensils,
 } from "lucide-react";
-import { Suspense, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import TabContentLoading from "@/components/skeletons/tabContentLoading";
 
 // Define interface matching Clerk user properties we use
 interface ClerkUser {
@@ -47,7 +48,7 @@ const Profile = () => {
   const [activeTab, setActiveTab] = useState("profile");
   
   // Fetch profile data from your database when Clerk user is loaded
-  const { data: dbProfile, isLoading } = useQuery<DatabaseProfile>({
+  const { data: dbProfile, isLoading: isLoadingProfile } = useQuery<DatabaseProfile>({
     queryKey: ['profile', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -81,8 +82,8 @@ const Profile = () => {
     enabled: !!user?.id && isLoaded,
   });
   
-  // Loading state
-  if (!isLoaded || isLoading) {
+  // Initial loading state for the entire page
+  if (!isLoaded) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="w-12 h-12 border-4 border-green-500 rounded-full border-t-transparent animate-spin"></div>
@@ -134,7 +135,7 @@ const Profile = () => {
                   {user?.emailAddresses[0].emailAddress || ""}
                 </p>
                 <Badge className="mt-2 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-                  {getSubscriptionTierLabel()}
+                  {isLoadingProfile ? "Loading..." : getSubscriptionTierLabel()}
                 </Badge>
               </div>
               <Separator className="my-4" />
@@ -198,31 +199,37 @@ const Profile = () => {
             className="w-full"
           >
             <TabsContent value="profile" className="mt-4">
-              <Suspense fallback={<div>loading</div>}>
+              {isLoadingProfile ? (
+                <TabContentLoading />
+              ) : (
                 <ProfileTab user={typedUser} dbProfile={dbProfile} />
-              </Suspense>
+              )}
             </TabsContent>
             <TabsContent value="subscription" className="mt-4">
-              <Card>
-                <CardContent className="p-6">
-                  <h2 className="text-xl font-bold">Subscription Details</h2>
-                  <div className="mt-4">
-                    <p className="mb-2"><strong>Status:</strong> {dbProfile?.subscriptionActive ? 'Active' : 'Inactive'}</p>
-                    <p className="mb-2"><strong>Plan:</strong> {getSubscriptionTierLabel()}</p>
-                    {dbProfile?.subscriptionActive && dbProfile?.stripeSubscriptionId && (
-                      <p className="mb-2"><strong>Subscription ID:</strong> {dbProfile.stripeSubscriptionId}</p>
-                    )}
-                    <p className="mb-2">
-                      <strong>Member Since:</strong> {dbProfile?.createdAt ? 
-                        new Date(dbProfile.createdAt).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric'
-                        }) : 'N/A'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+              {isLoadingProfile ? (
+                <TabContentLoading />
+              ) : (
+                <Card>
+                  <CardContent className="p-6">
+                    <h2 className="text-xl font-bold">Subscription Details</h2>
+                    <div className="mt-4">
+                      <p className="mb-2"><strong>Status:</strong> {dbProfile?.subscriptionActive ? 'Active' : 'Inactive'}</p>
+                      <p className="mb-2"><strong>Plan:</strong> {getSubscriptionTierLabel()}</p>
+                      {dbProfile?.subscriptionActive && dbProfile?.stripeSubscriptionId && (
+                        <p className="mb-2"><strong>Subscription ID:</strong> {dbProfile.stripeSubscriptionId}</p>
+                      )}
+                      <p className="mb-2">
+                        <strong>Member Since:</strong> {dbProfile?.createdAt ? 
+                          new Date(dbProfile.createdAt).toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          }) : 'N/A'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           </Tabs>
         </div>
