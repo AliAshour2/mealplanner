@@ -15,7 +15,8 @@ const PricingCard = ({
   features,
   isPopular,
   ctaText,
-}: PricingPlan) => {
+  current,
+}: PricingPlan & { current?: boolean }) => {
   const { user } = useUser();
   const userId = user?.id;
   const email = user?.emailAddresses[0].emailAddress;
@@ -64,6 +65,14 @@ const PricingCard = ({
     }
     mutate({ planType });
   }
+
+  // Determine button text and state based on subscription status
+  const getButtonText = () => {
+    if (isPending) return "Processing...";
+    if (current) return ctaText || "Current Plan";
+    return ctaText || `Subscribe to ${plan}`;
+  };
+
   return (
     <Card
       className={`relative flex flex-col h-full transition-all duration-300 hover:shadow-lg dark:bg-gray-800 ${
@@ -73,6 +82,11 @@ const PricingCard = ({
       {isPopular && (
         <div className="absolute top-0 right-0 px-3 py-1 text-xs font-medium translate-y-[-50%] bg-green-500 text-white rounded-full">
           Most Popular
+        </div>
+      )}
+      {current && (
+        <div className="absolute top-0 right-0 px-3 py-1 text-xs font-medium translate-y-[-50%] bg-blue-500 text-white rounded-full">
+          Current Plan
         </div>
       )}
       <CardContent className="flex flex-col h-full p-6">
@@ -102,14 +116,16 @@ const PricingCard = ({
 
         <Button
           onClick={() => handleSubscribe(plan)}
-          disabled={isPending}
+          disabled={isPending || current}
           className={`w-full ${
-            isPopular
+            current
+              ? "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-100 cursor-default"
+              : isPopular
               ? "bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
               : "bg-gray-100 text-gray-900 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600"
           }`}
         >
-          {isPending ? "Processing..." : ctaText || `Subscribe to ${plan}`}
+          {getButtonText()}
         </Button>
       </CardContent>
     </Card>

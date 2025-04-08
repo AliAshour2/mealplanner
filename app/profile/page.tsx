@@ -19,6 +19,7 @@ import {
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import TabContentLoading from "@/components/skeletons/tabContentLoading";
+import SubscriptionTap from "@/components/profilePage/subscription";
 
 // Define interface matching Clerk user properties we use
 interface ClerkUser {
@@ -209,26 +210,7 @@ const Profile = () => {
               {isLoadingProfile ? (
                 <TabContentLoading />
               ) : (
-                <Card>
-                  <CardContent className="p-6">
-                    <h2 className="text-xl font-bold">Subscription Details</h2>
-                    <div className="mt-4">
-                      <p className="mb-2"><strong>Status:</strong> {dbProfile?.subscriptionActive ? 'Active' : 'Inactive'}</p>
-                      <p className="mb-2"><strong>Plan:</strong> {getSubscriptionTierLabel()}</p>
-                      {dbProfile?.subscriptionActive && dbProfile?.stripeSubscriptionId && (
-                        <p className="mb-2"><strong>Subscription ID:</strong> {dbProfile.stripeSubscriptionId}</p>
-                      )}
-                      <p className="mb-2">
-                        <strong>Member Since:</strong> {dbProfile?.createdAt ? 
-                          new Date(dbProfile.createdAt).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          }) : 'N/A'}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <SubscriptionTap user={typedUser} />
               )}
             </TabsContent>
           </Tabs>
