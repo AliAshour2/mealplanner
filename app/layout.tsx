@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ReactQueryClientProvider } from "@/components/react-query-client-provider";
+import { Toaster } from "react-hot-toast";
 
 
 const geistSans = Geist({
@@ -28,9 +29,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning={true}>
         <ReactQueryClientProvider>
           <ClerkProvider>
+            <Toaster position="top-center" />
             <Navbar />
             <div className="max-w-7xl mx-auto px-16 sm:px-2 lg:px-8">
               {children}
