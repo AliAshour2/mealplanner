@@ -9,7 +9,8 @@
         "@neondatabase/mcp-server-neon",
         "start",
         "postgresql://neondb_owner:npg_Mpw9SLoE5tGC@ep-rapid-snowflake-a2p1o17h-pooler.eu-central-1.aws.neon.tech/neondb?sslmode=require"
-      ]
+      ],
+      "apiKey": "napi_61i9by56kcio71n9t52wfeyg5i35ng88u7ocpx8umpbdbbvkivvqcgm5cw4q1abb"
     }
   },
   "defaultMcpServer": "neon"
